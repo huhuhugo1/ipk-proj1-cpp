@@ -6,7 +6,8 @@
  * Ondrej Rysavy (rysavy@fit.vutbr.cz)
  *
  */
- 
+#include <iostream>
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,66 +19,100 @@
 #include <unistd.h>
 
 #define BUFSIZE 1024
+
+struct Socket {
+    int client_socket;
+    public:
+        Socket(const char* server_hostname, int port_number) {
+            struct hostent *server;
+            if ((server = gethostbyname(server_hostname)) == NULL) {
+                fprintf(stderr,"ERROR: no such host as %s\n", server_hostname);
+                exit(EXIT_FAILURE);
+            }
+
+            struct sockaddr_in server_address;
+            bzero((char *) &server_address, sizeof(server_address));
+            server_address.sin_family = AF_INET;
+            bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
+            server_address.sin_port = htons(port_number);
+
+            if ((this->client_socket = socket(AF_INET, SOCK_STREAM, 0)) <= 0) {
+                perror("ERROR: socket");
+                exit(EXIT_FAILURE);
+            }
+
+            if (connect(this->client_socket, (const struct sockaddr *) &server_address, sizeof(server_address)) != 0) {
+            perror("ERROR: connect");
+            exit(EXIT_FAILURE);        
+            }
+        }
+        ~Socket() {
+            close(this->client_socket);
+        }
+};
+struct argumentBox {
+    std::string command;
+    std::string host;
+    std::string port;
+    std::string path;
+
+    argumentBox(int argc, const char * argv[]) {
+        std::string url;
+        if (argc == 3) {
+            if (strlen(argv[2]) >= 7)
+                url.assign(argv[2]+7);
+
+            this->command.assign(argv[1]);
+
+            int semicolon_idx = url.find(':', 0);
+            int path_start_idx = url.find('/', semicolon_idx);
+            
+            this->host.assign(url.substr(0, semicolon_idx));
+            this->port.assign(url.substr(semicolon_idx + 1, path_start_idx - semicolon_idx - 1));
+            this->path.assign(url.substr(path_start_idx, -1));
+        }
+    }
+
+    void print() {
+        printf("command: %s\nport: %s\nhost: %s\npath: %s\n", command.c_str(), port.c_str(), host.c_str(), path.c_str());
+    }
+};
+
+
+
 int main (int argc, const char * argv[]) {
-    int client_socket, port_number, bytestx, bytesrx;
-    socklen_t serverlen;
-    const char *server_hostname;
-    struct hostent *server;
-    struct sockaddr_in server_address;
+    
+    argumentBox box(argc, argv);
+    box.print();
+    
+    return 0;
+    
+    Socket socket(box.host.c_str(), atoi(box.port.c_str()));
+
+
     char buf[BUFSIZE];
-     
-    /* 1. test vstupnich parametru: */
-    if (argc != 3) {
-        fprintf(stderr,"usage: %s <hostname> <port>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
-    server_hostname = argv[1];
-    port_number = atoi(argv[2]);
-    
-    /* 2. ziskani adresy serveru pomoci DNS */
-    
-    if ((server = gethostbyname(server_hostname)) == NULL) {
-        fprintf(stderr,"ERROR: no such host as %s\n", server_hostname);
-        exit(EXIT_FAILURE);
-    }
-    
-    /* 3. nalezeni IP adresy serveru a inicializace struktury server_address */
-    bzero((char *) &server_address, sizeof(server_address));
-    server_address.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
-    server_address.sin_port = htons(port_number);
-   
-    /* tiskne informace o vzdalenem soketu */ 
-    printf("INFO: Server socket: %s : %d \n", inet_ntoa(server_address.sin_addr), ntohs(server_address.sin_port));
-    
-    /* Vytvoreni soketu */
-    if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) <= 0) {
-        perror("ERROR: socket");
-        exit(EXIT_FAILURE);
-    }
-        
+
+    int bytestx, bytesrx;    
+
     /* nacteni zpravy od uzivatele */
     bzero(buf, BUFSIZE);
     printf("Please enter msg: ");
     fgets(buf, BUFSIZE, stdin);
     
-    if (connect(client_socket, (const struct sockaddr *) &server_address, sizeof(server_address)) != 0) {
-        perror("ERROR: connect");
-        exit(EXIT_FAILURE);        
-    }
+    
 
     /* odeslani zpravy na server */
-    bytestx = send(client_socket, buf, strlen(buf), 0);
+    bytestx = send(socket.client_socket, buf, strlen(buf), 0);
     if (bytestx < 0) 
       perror("ERROR in sendto");
     
     /* prijeti odpovedi a jeji vypsani */
-    bytesrx = recv(client_socket, buf, BUFSIZE, 0);
+    bytesrx = recv(socket.client_socket, buf, BUFSIZE, 0);
     if (bytesrx < 0) 
       perror("ERROR in recvfrom");
       
     printf("Echo from server: %s", buf);
         
-    close(client_socket);
+    
     return 0;
 }
