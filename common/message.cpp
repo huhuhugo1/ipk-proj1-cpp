@@ -28,7 +28,8 @@ struct HTTP_message_t {
             fseek(file, 0L, SEEK_END);
             m["Content-Length"] = to_string(ftell(file));
             rewind(file);
-        }
+        } else
+            printf("error file");
     } 
 
     void fileClose() {

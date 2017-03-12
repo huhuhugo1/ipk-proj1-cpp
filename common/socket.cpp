@@ -18,25 +18,18 @@ int createClientSocket(const char* server_hostname, int port_number) {
         exit(EXIT_FAILURE);
     }
     
-    /* 3. nalezeni IP adresy serveru a inicializace struktury server_address */
     bzero((char *) &server_address, sizeof(server_address));
     server_address.sin_family = AF_INET;
     bcopy((char *)server->h_addr, (char *)&server_address.sin_addr.s_addr, server->h_length);
     server_address.sin_port = htons(port_number);
-   
-    /* tiskne informace o vzdalenem soketu */ 
-    printf("INFO: Server socket: %s : %d \n", inet_ntoa(server_address.sin_addr), ntohs(server_address.sin_port));
-    
+
     int client_socket;
-    /* Vytvoreni soketu */
-	if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) <= 0)
-	{
+    if ((client_socket = socket(AF_INET, SOCK_STREAM, 0)) <= 0) {
 		perror("ERROR: socket");
 		exit(EXIT_FAILURE);
 	}
     
-    if (connect(client_socket, (const struct sockaddr *) &server_address, sizeof(server_address)) != 0)
-    {
+    if (connect(client_socket, (const struct sockaddr *) &server_address, sizeof(server_address)) != 0) {
 		perror("ERROR: connect");
 		exit(EXIT_FAILURE);        
     }
