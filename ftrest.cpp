@@ -17,9 +17,6 @@
 using namespace std;
 
 int main (int argc, const char * argv[]) {
-    char buffer[BUFSIZE];
-    struct HTTP_message_t message;
-
     argumentBox box;
     box.load(argc, argv);
     socket_t tube(box.host.c_str(), box.port);

@@ -4,59 +4,54 @@
 using namespace std;
 
 struct HTTP_message_t {
-    string command;
-    string path;
-    string type;
-    string accept;
-    string encoding;
-    string con_type;
-    unsigned long long length;
-
+    map<string, string> m;
     FILE* file;
 
     HTTP_message_t() {
-        encoding = "identify";
-        accept = "application/octet-stream";
-        con_type = "application/octet-stream";
+        m["Accept-Encoding"] = "identify";
+        m["Accept"] = "application/octet-stream";
+        m["Content-Type"] = "application/octet-stream";
         file = NULL;
     }
 
-    ~HTTP_message_t() {
-        fclose(file);
-    }
-
-    char* getDate() {
+    void getDate() {
         static char date[100];
         time_t cas = time(NULL);
         strftime(date, 100, "%a, %d %b %Y %X CET", localtime(&cas));
-        return date;
+        m["Date"] = string(date);
     }
 
     void fileInit(const char* name, const char* mode) {
         file = fopen(name, mode);
         if (file) {
             fseek(file, 0L, SEEK_END);
-            length = ftell(file);
+            m["Content-Length"] = to_string(ftell(file));
             rewind(file);
         }
     } 
 
+    void fileClose() {
+        if (file)
+            fclose(file);
+    }
+
     bool writeRequest (char* buffer, size_t size) {
         memset(buffer, 0, size);
-        
+        getDate();
+
         sprintf(buffer,
         "%s %s?type=%s HTTP/1.1\r\n"
         "Date: %s\r\n"
         "Accept: %s\r\n"
         "Accept-Encoding: %s\r\n",
-        command.c_str(), path.c_str(), type.c_str(), getDate(), 
-        accept.c_str(), encoding.c_str());
+        m["Command"].c_str(), m["Remote-Path"].c_str(), m["Type"].c_str(), m["Date"].c_str(), 
+        m["Accept"].c_str(), m["Accept-Encoding"].c_str());
         
-        if (command != "DEL")
+        if (m["Command"] != "DEL")
             sprintf(buffer + strlen(buffer),
             "Content-Type: %s\r\n"
-            "Content-Length: %llu\r\n\r\n",
-            con_type.c_str(), length);
+            "Content-Length: %s\r\n\r\n",
+            m["Content-Type"].c_str(), m["Content-Length"].c_str());
         else
             sprintf(buffer + strlen(buffer), "\r\n");
 
@@ -70,7 +65,19 @@ struct HTTP_message_t {
         return false;
     }
 
-    int parseResponseHead (char* buffer, size_t size) {
-        ;
+    int parseRequest (char* buffer, size_t size) {
+        string head(buffer, strstr(buffer, "\r\n\r\n") + 4 - buffer);
+        stringstream atributes(head.substr(head.find("\r\n") + 2));
+        string line;
+
+        m["Command"] = head.substr(0, head.find(" "));
+        m["Remote-Path"] = head.substr(head.find(" ") + 1, head.find("?type=") - head.find(" ") - 1);
+        m["Type"] = head.substr(head.find("?type=") + 6, head.find(" ", head.find("?type=")) - head.find("?type=") - 6);
+
+        while (getline(atributes, line)) {
+            string index = line.substr(0, line.find(":"));
+            string element = line.substr(line.find(":") + 2);
+            m[index] = element;
+        }
     }
 };

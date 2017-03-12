@@ -3,9 +3,9 @@ void put (argumentBox* box, unsigned size, socket_t* tube) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.command = "PUT";
-    message.path = box->remote_path;
-    message.type = "file";
+    message.m["Command"] = "PUT";
+    message.m["Remote-Path"] = box->remote_path;
+    message.m["Type"] = "file";
     message.fileInit(box->local_path.c_str(), "rb");
 
     do {
@@ -14,7 +14,9 @@ void put (argumentBox* box, unsigned size, socket_t* tube) {
             perror("ERROR in sendto");
     } while (is_full);
 
+    message.fileClose();
 
+    message.parseRequest(buffer, size);
 }
 
 void mkd (argumentBox* box, unsigned size, socket_t* tube) {
@@ -22,9 +24,9 @@ void mkd (argumentBox* box, unsigned size, socket_t* tube) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.command = "PUT";
-    message.path = box->remote_path;
-    message.type = "folder";
+    message.m["Command"] = "PUT";
+    message.m["Remote-Path"] = box->remote_path;
+    message.m["Type"] = "folder";
 
     message.writeRequest(buffer, size);
     if (send(tube->client_socket, buffer, size, 0) < 0)
@@ -36,9 +38,9 @@ void get (argumentBox* box, unsigned size, socket_t* tube) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.command = "GET";
-    message.path = box->remote_path;
-    message.type = "file";
+    message.m["Command"] = "GET";
+    message.m["Remote-Path"] = box->remote_path;
+    message.m["Type"] = "file";
     message.fileInit(box->local_path.c_str(), "wb");
 
     message.writeRequest(buffer, size);
@@ -51,9 +53,9 @@ void lst (argumentBox* box, unsigned size, socket_t* tube) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.command = "GET";
-    message.path = box->remote_path;
-    message.type = "folder";
+    message.m["Command"] = "GET";
+    message.m["Remote-Path"] = box->remote_path;
+    message.m["Type"] = "folder";
 
     message.writeRequest(buffer, size);
     if (send(tube->client_socket, buffer, size, 0) < 0)
@@ -65,9 +67,9 @@ void del (argumentBox* box, unsigned size, socket_t* tube) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.command = "DEL";
-    message.path = box->remote_path;
-    message.type = "file";
+    message.m["Command"] = "DEL";
+    message.m["Remote-Path"] = box->remote_path;
+    message.m["Type"] = "file";
 
     message.writeRequest(buffer, size);
     if (send(tube->client_socket, buffer, size, 0) < 0)
@@ -79,9 +81,9 @@ void rmd (argumentBox* box, unsigned size, socket_t* tube) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.command = "DEL";
-    message.path = box->remote_path;
-    message.type = "folder";
+    message.m["Command"] = "DEL";
+    message.m["Remote-Path"] = box->remote_path;
+    message.m["Type"] = "folder";
 
     message.writeRequest(buffer, size);
     if (send(tube->client_socket, buffer, size, 0) < 0)
