@@ -1,4 +1,4 @@
-void put (argumentBox* box, unsigned size, socket_t* tube) {
+void put (argumentBox* box, unsigned size, int client_socket) {
     bool is_full;
     char buffer[size];
     struct HTTP_message_t message;
@@ -10,16 +10,14 @@ void put (argumentBox* box, unsigned size, socket_t* tube) {
 
     do {
         is_full = message.writeRequest(buffer, size);
-        if (send(tube->client_socket, buffer, size, 0) < 0)
+        if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
     } while (is_full);
 
     message.fileClose();
-
-    message.parseRequest(buffer, size);
 }
 
-void mkd (argumentBox* box, unsigned size, socket_t* tube) {
+void mkd (argumentBox* box, unsigned size, int client_socket) {
     //bool is_full;
     char buffer[size];
     struct HTTP_message_t message;
@@ -29,11 +27,11 @@ void mkd (argumentBox* box, unsigned size, socket_t* tube) {
     message.m["Type"] = "folder";
 
     message.writeRequest(buffer, size);
-    if (send(tube->client_socket, buffer, size, 0) < 0)
+    if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
 }
 
-void get (argumentBox* box, unsigned size, socket_t* tube) {
+void get (argumentBox* box, unsigned size, int client_socket) {
     //bool is_full;
     char buffer[size];
     struct HTTP_message_t message;
@@ -44,11 +42,11 @@ void get (argumentBox* box, unsigned size, socket_t* tube) {
     message.fileInit(box->local_path.c_str(), "wb");
 
     message.writeRequest(buffer, size);
-    if (send(tube->client_socket, buffer, size, 0) < 0)
+    if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
 }
 
-void lst (argumentBox* box, unsigned size, socket_t* tube) {
+void lst (argumentBox* box, unsigned size, int client_socket) {
     //bool is_full;
     char buffer[size];
     struct HTTP_message_t message;
@@ -58,11 +56,11 @@ void lst (argumentBox* box, unsigned size, socket_t* tube) {
     message.m["Type"] = "folder";
 
     message.writeRequest(buffer, size);
-    if (send(tube->client_socket, buffer, size, 0) < 0)
+    if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
 }
 
-void del (argumentBox* box, unsigned size, socket_t* tube) {
+void del (argumentBox* box, unsigned size, int client_socket) {
     //bool is_full;
     char buffer[size];
     struct HTTP_message_t message;
@@ -72,11 +70,11 @@ void del (argumentBox* box, unsigned size, socket_t* tube) {
     message.m["Type"] = "file";
 
     message.writeRequest(buffer, size);
-    if (send(tube->client_socket, buffer, size, 0) < 0)
+    if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
 }
 
-void rmd (argumentBox* box, unsigned size, socket_t* tube) {
+void rmd (argumentBox* box, unsigned size, int client_socket) {
     //bool is_full;
     char buffer[size];
     struct HTTP_message_t message;
@@ -86,6 +84,6 @@ void rmd (argumentBox* box, unsigned size, socket_t* tube) {
     message.m["Type"] = "folder";
 
     message.writeRequest(buffer, size);
-    if (send(tube->client_socket, buffer, size, 0) < 0)
+    if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
 }

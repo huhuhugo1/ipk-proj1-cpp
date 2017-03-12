@@ -1,10 +1,11 @@
 #include <iostream>
 #include <string.h>
+#include <unordered_map>
 
 using namespace std;
 
 struct HTTP_message_t {
-    map<string, string> m;
+    unordered_map<string, string> m;
     FILE* file;
 
     HTTP_message_t() {
@@ -14,7 +15,7 @@ struct HTTP_message_t {
         file = NULL;
     }
 
-    void getDate() {
+    void setDate() {
         static char date[100];
         time_t cas = time(NULL);
         strftime(date, 100, "%a, %d %b %Y %X CET", localtime(&cas));
@@ -37,7 +38,7 @@ struct HTTP_message_t {
 
     bool writeRequest (char* buffer, size_t size) {
         memset(buffer, 0, size);
-        getDate();
+        setDate();
 
         sprintf(buffer,
         "%s %s?type=%s HTTP/1.1\r\n"
