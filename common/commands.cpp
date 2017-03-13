@@ -1,39 +1,37 @@
-#include "box.cpp"
-void put (argumentBox* box, unsigned size, int client_socket) {
-    bool is_full;
-    char buffer[size];
+void putRequest (argumentBox* box, unsigned size, int client_socket) {
+    FILE* file = fopen(box->local_path.c_str(), "rb");
     struct HTTP_message_t message;
+    char buffer[size];
 
-    message.m["Command"] = "PUT";
-    message.m["Remote-Path"] = box->remote_path;
-    message.m["Type"] = "file";
-    message.fileInit(box->local_path.c_str(), "rb");
+    fseek(file, 0L, SEEK_END);
+    unsigned long long expected_length = ftell(file);
+    rewind(file);
+    unsigned long long read = 0;
 
-    do {
-        is_full = message.writeRequest(buffer, size);
-        if (send(client_socket, buffer, size, 0) < 0)
-            perror("ERROR in sendto");
-    } while (is_full);
+    message["Command"] = "PUT";
+    message["Remote-Path"] = box->remote_path;
+    message["Type"] = "file";
+    message["Content-Length"] = to_string(expected_length);
 
-    message.fileClose();
-}
+    message.writeRequestHead(buffer, size);
 
-int putReaction(int client_socket, char* buffer, int size, string path, unsigned long long filesize) {
-    int read_size;
-    char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
-    int body_length = size - (body_pos - buffer);
-    FILE* file = fopen(("." + path).c_str(), "wb");
-    
-    do {
-        if (body_length > filesize)
-            body_length = filesize;
-        
-        filesize -= fwrite(body_pos, sizeof(char), body_length, file);
-    } while ((read_size = recv(client_socket, buffer, size, 0)) > 0 );
+    char* body_pos = buffer + strlen(buffer);
 
-        fflush(file);
-        fclose(file); 
-    return read_size;
+    while (read < expected_length) {
+        int read_length = size;                         //velkost celeho bufferu
+        if (body_pos - buffer + read_length > size)     //ak by to precilo velkost velkost celeho buferu
+            read_length = size - (body_pos - buffer);   //tak tam zapis iba zvysok
+
+        read += fread(body_pos, sizeof(char), read_length, file);
+        body_pos = buffer;
+
+        switch (send(client_socket, buffer, size, 0)) {
+            case -1: break;
+            case  0: break;
+            default: break;
+        }
+    };
+    fclose(file);
 }
 
 void mkd (argumentBox* box, unsigned size, int client_socket) {
@@ -41,11 +39,11 @@ void mkd (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.m["Command"] = "PUT";
-    message.m["Remote-Path"] = box->remote_path;
-    message.m["Type"] = "folder";
+    message["Command"] = "PUT";
+    message["Remote-Path"] = box->remote_path;
+    message["Type"] = "folder";
 
-    message.writeRequest(buffer, size);
+    message.writeRequestHead(buffer, size);
     if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
 }
@@ -55,12 +53,12 @@ void get (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.m["Command"] = "GET";
-    message.m["Remote-Path"] = box->remote_path;
-    message.m["Type"] = "file";
-    message.fileInit(box->local_path.c_str(), "wb");
+    message["Command"] = "GET";
+    message["Remote-Path"] = box->remote_path;
+    message["Type"] = "file";
+    //message.fileInit(box->local_path.c_str(), "wb");
 
-    message.writeRequest(buffer, size);
+    message.writeRequestHead(buffer, size);
     if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
 }
@@ -70,13 +68,17 @@ void lst (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.m["Command"] = "GET";
-    message.m["Remote-Path"] = box->remote_path;
-    message.m["Type"] = "folder";
+    message["Command"] = "GET";
+    message["Remote-Path"] = box->remote_path;
+    message["Type"] = "folder";
 
-    message.writeRequest(buffer, size);
+    message.writeRequestHead(buffer, size);
     if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
+
+    while (recv(client_socket, buffer, size, 0) > 0)
+        printf("%s", buffer);
+    
 }
 
 void del (argumentBox* box, unsigned size, int client_socket) {
@@ -84,11 +86,11 @@ void del (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.m["Command"] = "DEL";
-    message.m["Remote-Path"] = box->remote_path;
-    message.m["Type"] = "file";
+    message["Command"] = "DEL";
+    message["Remote-Path"] = box->remote_path;
+    message["Type"] = "file";
 
-    message.writeRequest(buffer, size);
+    message.writeRequestHead(buffer, size);
     if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
 }
@@ -98,11 +100,12 @@ void rmd (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message.m["Command"] = "DEL";
-    message.m["Remote-Path"] = box->remote_path;
-    message.m["Type"] = "folder";
+    message["Command"] = "DEL";
+    message["Remote-Path"] = box->remote_path;
+    message["Type"] = "folder";
 
-    message.writeRequest(buffer, size);
+    message.writeRequestHead(buffer, size);
     if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
 }
+

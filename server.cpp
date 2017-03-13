@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include "common/message.cpp"
-#include "common/commands.cpp"
+#include "common/responses.cpp"
 
 #define BUFSIZE 1024
 using namespace std;
@@ -14,7 +14,7 @@ using namespace std;
 int main(int argc, char *argv[]) {
     int socket_desc, client_sock, c, read_size;
     struct sockaddr_in server, client;
-    char client_message[BUFSIZE];
+    char buffer[BUFSIZE];
     
     if ((socket_desc = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         printf("Could not create socket");
@@ -40,13 +40,31 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        read_size = recv(client_sock, client_message, BUFSIZE, 0);
+        read_size = recv(client_sock, buffer, BUFSIZE, 0);
         HTTP_message_t message;
-        message.parseRequest(client_message, BUFSIZE);
+        message.parseRequestHead(buffer, BUFSIZE);
 
-        if (message.m["Command"] == "PUT")
-            putReaction(client_sock, client_message, BUFSIZE, message.m["Remote-Path"], stoull(message.m["Content-Length"]));
+        if (message["Command"] == "PUT" && message["Type"] == "file")
+            read_size = putResponse(client_sock, buffer, BUFSIZE, message);
         
+        else if (message["Command"] == "PUT" && message["Type"] == "folder")
+            ;//mkdResponse(client_sock, buffer, BUFSIZE, message);
+        
+        else if (message["Command"] == "GET" && message["Type"] == "file")
+            ;//getReaction(client_sock, buffer, BUFSIZE, message);
+        
+        else if (message["Command"] == "GET" && message["Type"] == "folder")
+            read_size = lstResponse(client_sock, buffer, BUFSIZE, message);
+        
+        else if (message["Command"] == "DEL" && message["Type"] == "file")
+            ;//delReaction(client_sock, buffer, BUFSIZE, message);
+        
+        else if (message["Command"] == "DEL" && message["Type"] == "folder")
+            ;//rmdReaction(client_sock, buffer, BUFSIZE, message);
+        
+        else
+            ;//TODO error
+
         if (read_size == 0) {
             puts("Client disconnected");
             fflush(stdout);

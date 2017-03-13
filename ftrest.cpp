@@ -21,7 +21,7 @@ int main (int argc, const char * argv[]) {
     int client_socket = createClientSocket(box.host.c_str(), box.port);
     
     if (box.command == "put")
-        put(&box, BUFSIZE, client_socket);
+        putRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "mkd")
         mkd(&box, BUFSIZE, client_socket);
     else if (box.command == "get")

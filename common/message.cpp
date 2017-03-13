@@ -5,9 +5,14 @@
 
 using namespace std;
 
-struct HTTP_message_t {
+class HTTP_message_t {
     unordered_map<string, string> m;
     FILE* file;
+
+public:
+    string& operator[] (string index) {
+        return m[index];
+    }
 
     HTTP_message_t() {
         m["Accept-Encoding"] = "identify";
@@ -22,7 +27,7 @@ struct HTTP_message_t {
         strftime(date, 100, "%a, %d %b %Y %X CET", localtime(&cas));
         m["Date"] = string(date);
     }
-
+/*
     void fileInit(const char* name, const char* mode) {
         file = fopen(name, mode);
         if (file) {
@@ -37,8 +42,8 @@ struct HTTP_message_t {
         if (file)
             fclose(file);
     }
-
-    bool writeRequest (char* buffer, size_t size) {
+*/
+    bool writeRequestHead (char* buffer, size_t size) {
         bzero(buffer, size);
         setDate();
 
@@ -57,17 +62,11 @@ struct HTTP_message_t {
             m["Content-Type"].c_str(), m["Content-Length"].c_str());
         else
             sprintf(buffer + strlen(buffer), "\r\n");
-
-        if (file) {
-            int body_length = size - strlen(buffer);
-            if (body_length == fread(buffer + strlen(buffer), sizeof(char), body_length, file))
-                return true;
-        }
-
+        
         return false;
     }
 
-    void parseRequest (char* buffer, size_t size) {
+    void parseRequestHead (char* buffer, size_t size) {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         string head(buffer, body_pos - buffer);
         stringstream atributes(head.substr(head.find("\r\n") + 2));
