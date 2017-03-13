@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string.h>
 #include <unordered_map>
+#include <sstream>
 
 using namespace std;
 
@@ -38,7 +39,7 @@ struct HTTP_message_t {
     }
 
     bool writeRequest (char* buffer, size_t size) {
-        memset(buffer, 0, size);
+        bzero(buffer, size);
         setDate();
 
         sprintf(buffer,
@@ -58,17 +59,17 @@ struct HTTP_message_t {
             sprintf(buffer + strlen(buffer), "\r\n");
 
         if (file) {
-            int body_offset = strlen(buffer);
-            int body_length = size - body_offset;
-
-            if (body_length == fread(buffer + body_offset, sizeof(char), body_length, file))
+            int body_length = size - strlen(buffer);
+            if (body_length == fread(buffer + strlen(buffer), sizeof(char), body_length, file))
                 return true;
         }
+
         return false;
     }
 
     int parseRequest (char* buffer, size_t size) {
-        string head(buffer, strstr(buffer, "\r\n\r\n") + 4 - buffer);
+        char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+        string head(buffer, body_pos - buffer);
         stringstream atributes(head.substr(head.find("\r\n") + 2));
         string line;
 
@@ -81,5 +82,19 @@ struct HTTP_message_t {
             string element = line.substr(line.find(":") + 2);
             m[index] = element;
         }
+
+        if (m["Command"] == "PUT") {
+            int filesize = atoi(m["Content-Length"].c_str());
+            if (!file)
+                file = fopen(("." + m["Remote-Path"]).c_str(), "wb");
+            
+            int body_length = size - (body_pos - buffer);
+            if (body_length > filesize)
+                body_length = filesize;
+            
+            if (filesize -= fwrite(body_pos, sizeof(char), body_length, file))
+                return true;
+        }
+
     }
 };
