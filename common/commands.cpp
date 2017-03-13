@@ -34,18 +34,66 @@ void putRequest (argumentBox* box, unsigned size, int client_socket) {
     fclose(file);
 }
 
-void mkd (argumentBox* box, unsigned size, int client_socket) {
-    //bool is_full;
+void lstRquest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
-    message["Command"] = "PUT";
+    message["Command"] = "GET";
     message["Remote-Path"] = box->remote_path;
     message["Type"] = "folder";
 
     message.writeRequestHead(buffer, size);
-    if (send(client_socket, buffer, size, 0) < 0)
-            perror("ERROR in sendto");
+
+    switch (send(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    switch (recv(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    message.parseResponseHead(buffer, size);
+    char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+    printf("%.*s", size, body_pos);
+    
+    while (buffer[size - 1] != 0) {
+        switch (recv(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+        }
+        printf("%.*s", size, buffer);
+    } 
+}
+
+void mkdRequest (argumentBox* box, unsigned size, int client_socket) {
+    char buffer[size];
+    struct HTTP_message_t message;
+
+    message["Command"] = "DEL";
+    message["Remote-Path"] = box->remote_path;
+    message["Type"] = "folder";
+
+    message.writeRequestHead(buffer, size);
+
+    switch (send(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    switch (recv(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    message.parseResponseHead(buffer, size);
+    //TODO process return code from message
 }
 
 void get (argumentBox* box, unsigned size, int client_socket) {
@@ -61,24 +109,6 @@ void get (argumentBox* box, unsigned size, int client_socket) {
     message.writeRequestHead(buffer, size);
     if (send(client_socket, buffer, size, 0) < 0)
             perror("ERROR in sendto");
-}
-
-void lst (argumentBox* box, unsigned size, int client_socket) {
-    //bool is_full;
-    char buffer[size];
-    struct HTTP_message_t message;
-
-    message["Command"] = "GET";
-    message["Remote-Path"] = box->remote_path;
-    message["Type"] = "folder";
-
-    message.writeRequestHead(buffer, size);
-    if (send(client_socket, buffer, size, 0) < 0)
-            perror("ERROR in sendto");
-
-    while (recv(client_socket, buffer, size, 0) > 0)
-        printf("%s", buffer);
-    
 }
 
 void del (argumentBox* box, unsigned size, int client_socket) {

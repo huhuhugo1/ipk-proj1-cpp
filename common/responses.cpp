@@ -35,13 +35,19 @@ int lstResponse(int client_socket, char* buffer, int size, HTTP_message_t messag
         while (struct dirent *epdf = readdir(dpdf))
             folder_content.append(epdf->d_name).append("\n");
     else 
-        ;//todo error
-    
-    //todo zapsani hlavičky do stringu/bufferu
+        ;//todo 
+
+    message["Code"] = "200 OK";
+    message["Content-Encoding"] = "identity"; 
+    message["Content-Type"] = "text/plain";
+    message["Content-Length"] = to_string(folder_content.length());
+    message.writeResponseHead(buffer, size);
+
+    folder_content.insert(0, buffer);
 
     unsigned long long expected_length = folder_content.length();
     unsigned long long sended = 0;
-    
+
     while (sended < expected_length) {
         int send_length = size;                         //velkost celeho bufferu
         if (send_length + sended > expected_length)     //ak by to precilo velkost velkost celeho stringu
@@ -57,26 +63,42 @@ int lstResponse(int client_socket, char* buffer, int size, HTTP_message_t messag
     return 1;//read_size;
 }
 
-/*
-int lstResponse(int client_socket, char* buffer, int size, HTTP_message_t message) {
-    string file_list;
-    int read_size;
+int mkdResponse (int client_socket, char* buffer, int size, HTTP_message_t message) {
+    
+    if (mkdir(("." + message["Remote-Path"]).c_str()) == 0)
+        message["Code"] = "200 OK";
+    else    
+        message["Code"] = "400 Bad Request";
 
+        message["Content-Encoding"] = "identity"; 
+        message["Content-Type"] = "text/plain";
+        message["Content-Length"] = "0";
+        message.writeResponseHead(buffer, size);
+    switch (send(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }      
     
-    
-    int start = 0;
-    int n = 0;
-    int length = file_list
-
-        do {
-            if (start + size <= length)
-                n = size;
-            else
-                n = length - start;
-            send(client_socket, file_list.substr(start, n).c_str(), size, 0);
-            start += size;
-        } while (start < length);;
-    
-    return 0;
+    return 1;//read_size;
 }
-*/
+
+int rmdResponse(int client_socket, char* buffer, int size, HTTP_message_t message) {
+    
+    if (rmdir(("." + message["Remote-Path"]).c_str()) == 0)
+        message["Code"] = "200 OK";
+    else    
+        message["Code"] = "400 Bad Request";
+
+        message["Content-Encoding"] = "identity"; 
+        message["Content-Type"] = "text/plain";
+        message["Content-Length"] = "0";
+        message.writeResponseHead(buffer, size);
+    switch (send(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }      
+    
+    return 1;//read_size;
+}

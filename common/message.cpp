@@ -82,4 +82,37 @@ public:
             m[index] = element;
         }
     }
+
+
+    bool writeResponseHead (char* buffer, size_t size) {
+        bzero(buffer, size);
+        setDate();
+
+        sprintf(buffer,
+        "HTTP/1.1 %s\r\n"
+        "Date: %s\r\n"
+        "Content-Encoding: %s\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %s\r\n\r\n",
+        m["Code"].c_str(), m["Date"].c_str(), m["Content-Encoding"].c_str(), 
+        m["Content-Type"].c_str(), m["Content-Length"].c_str());
+        
+        return false;
+    }
+
+    void parseResponseHead (char* buffer, size_t size) {
+        char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+        string head(buffer, body_pos - buffer);
+        stringstream atributes(head.substr(head.find("\r\n") + 2));
+        string line;
+
+        m["Code"] = head.substr(9 + 1, head.find("\r\n"));
+        
+        while (getline(atributes, line)) {
+            string index = line.substr(0, line.find(":"));
+            string element = line.substr(line.find(":") + 2);
+            m[index] = element;
+        }
+    }
+
 };

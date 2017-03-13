@@ -27,7 +27,7 @@ int main (int argc, const char * argv[]) {
     else if (box.command == "get")
         get(&box, BUFSIZE, client_socket);
     else if (box.command == "lst")
-        lst(&box, BUFSIZE, client_socket);
+        lstRquest(&box, BUFSIZE, client_socket);
     else if (box.command == "del")
         del(&box, BUFSIZE, client_socket);
     else if (box.command == "rmd")
