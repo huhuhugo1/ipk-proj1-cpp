@@ -67,7 +67,7 @@ struct HTTP_message_t {
         return false;
     }
 
-    int parseRequest (char* buffer, size_t size) {
+    void parseRequest (char* buffer, size_t size) {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         string head(buffer, body_pos - buffer);
         stringstream atributes(head.substr(head.find("\r\n") + 2));
@@ -82,19 +82,5 @@ struct HTTP_message_t {
             string element = line.substr(line.find(":") + 2);
             m[index] = element;
         }
-
-        if (m["Command"] == "PUT") {
-            int filesize = atoi(m["Content-Length"].c_str());
-            if (!file)
-                file = fopen(("." + m["Remote-Path"]).c_str(), "wb");
-            
-            int body_length = size - (body_pos - buffer);
-            if (body_length > filesize)
-                body_length = filesize;
-            
-            if (filesize -= fwrite(body_pos, sizeof(char), body_length, file))
-                return true;
-        }
-
     }
 };

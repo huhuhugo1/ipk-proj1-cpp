@@ -1,3 +1,4 @@
+#include "box.cpp"
 void put (argumentBox* box, unsigned size, int client_socket) {
     bool is_full;
     char buffer[size];
@@ -15,6 +16,24 @@ void put (argumentBox* box, unsigned size, int client_socket) {
     } while (is_full);
 
     message.fileClose();
+}
+
+int putReaction(int client_socket, char* buffer, int size, string path, unsigned long long filesize) {
+    int read_size;
+    char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+    int body_length = size - (body_pos - buffer);
+    FILE* file = fopen(("." + path).c_str(), "wb");
+    
+    do {
+        if (body_length > filesize)
+            body_length = filesize;
+        
+        filesize -= fwrite(body_pos, sizeof(char), body_length, file);
+    } while ((read_size = recv(client_socket, buffer, size, 0)) > 0 );
+
+        fflush(file);
+        fclose(file); 
+    return read_size;
 }
 
 void mkd (argumentBox* box, unsigned size, int client_socket) {

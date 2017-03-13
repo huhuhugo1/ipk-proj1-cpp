@@ -5,7 +5,8 @@
 #include<unistd.h>    //write
 
 #include <iostream>
-#include"common/message.cpp"
+#include "common/message.cpp"
+#include "common/commands.cpp"
 
 #define BUFSIZE 1024
 using namespace std;
@@ -38,14 +39,13 @@ int main(int argc, char *argv[]) {
             perror("accept failed");
             return 1;
         }
+
+        read_size = recv(client_sock, client_message, BUFSIZE, 0);
         HTTP_message_t message;
-        while ((read_size = recv(client_sock, client_message, BUFSIZE, 0)) > 0 ) {
-            //Send the message back to client
-            //write(client_sock, client_message, strlen(client_message));
-            message.parseRequest(client_message, BUFSIZE);
-        }
-        fflush(message.file);
-        message.fileClose();
+        message.parseRequest(client_message, BUFSIZE);
+
+        if (message.m["Command"] == "PUT")
+            putReaction(client_sock, client_message, BUFSIZE, message.m["Remote-Path"], stoull(message.m["Content-Length"]));
         
         if (read_size == 0) {
             puts("Client disconnected");
