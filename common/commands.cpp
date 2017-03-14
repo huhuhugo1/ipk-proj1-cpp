@@ -74,6 +74,32 @@ void mkdRequest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
+    message["Command"] = "PUT";
+    message["Remote-Path"] = box->remote_path;
+    message["Type"] = "folder";
+
+    message.writeRequestHead(buffer, size);
+
+    switch (send(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    switch (recv(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    message.parseResponseHead(buffer, size);
+    cout << string(buffer, 12) << endl;
+}
+
+void rmdRequest (argumentBox* box, unsigned size, int client_socket) {
+    char buffer[size];
+    struct HTTP_message_t message;
+
     message["Command"] = "DEL";
     message["Remote-Path"] = box->remote_path;
     message["Type"] = "folder";
@@ -93,7 +119,7 @@ void mkdRequest (argumentBox* box, unsigned size, int client_socket) {
     }
 
     message.parseResponseHead(buffer, size);
-    //TODO process return code from message
+    cout << string(buffer, 12) << endl;
 }
 
 void get (argumentBox* box, unsigned size, int client_socket) {
@@ -111,8 +137,7 @@ void get (argumentBox* box, unsigned size, int client_socket) {
             perror("ERROR in sendto");
 }
 
-void del (argumentBox* box, unsigned size, int client_socket) {
-    //bool is_full;
+void delRequest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
@@ -121,21 +146,22 @@ void del (argumentBox* box, unsigned size, int client_socket) {
     message["Type"] = "file";
 
     message.writeRequestHead(buffer, size);
-    if (send(client_socket, buffer, size, 0) < 0)
-            perror("ERROR in sendto");
+
+    switch (send(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    switch (recv(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    message.parseResponseHead(buffer, size);
+    cout << string(buffer, 12) << endl;
 }
 
-void rmd (argumentBox* box, unsigned size, int client_socket) {
-    //bool is_full;
-    char buffer[size];
-    struct HTTP_message_t message;
 
-    message["Command"] = "DEL";
-    message["Remote-Path"] = box->remote_path;
-    message["Type"] = "folder";
-
-    message.writeRequestHead(buffer, size);
-    if (send(client_socket, buffer, size, 0) < 0)
-            perror("ERROR in sendto");
-}
 

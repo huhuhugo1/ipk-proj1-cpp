@@ -1,7 +1,8 @@
 #include <dirent.h>
+#include <sys/stat.h>
 
-int putResponse(int client_socket, char* buffer, int size, HTTP_message_t message) {
-    FILE* file = fopen(("." + message["Remote-Path"]).c_str(), "wb");
+int putResponse(int client_socket, char* buffer, int size, HTTP_message_t message, string root_path) {
+    FILE* file = fopen((root_path + message["Remote-Path"]).c_str(), "wb");
     unsigned long long expected_size = stoull(message["Content-Length"]);
     unsigned long long written = 0;
     char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
@@ -28,19 +29,29 @@ int putResponse(int client_socket, char* buffer, int size, HTTP_message_t messag
     return 0;//read_size;
 }
 
-int lstResponse(int client_socket, char* buffer, int size, HTTP_message_t message) {
+int lstResponse(int client_socket, char* buffer, int size, HTTP_message_t message, string root_path) {
     string folder_content;
+    struct stat statbuf;
 
-    if (DIR *dpdf = opendir(("." + message["Remote-Path"]).c_str()))
-        while (struct dirent *epdf = readdir(dpdf))
-            folder_content.append(epdf->d_name).append("\n");
-    else 
-        ;//todo 
+    if (stat((root_path + message["Remote-Path"]).c_str(), &statbuf) != 0)
+        message["Code"] = "404 Not Found";   
+    
+    else if (!S_ISDIR(statbuf.st_mode))
+        message["Code"] = "400 Bad Request";
+    
+    else {
+        if (DIR *dpdf = opendir((root_path + message["Remote-Path"]).c_str()))
+            while (struct dirent *epdf = readdir(dpdf))
+                folder_content.append(epdf->d_name).append("\n");
+        else 
+            ;//todo 
+        message["Code"] = "200 OK";
+        message["Content-Length"] = to_string(folder_content.length());
+    }
 
-    message["Code"] = "200 OK";
     message["Content-Encoding"] = "identity"; 
     message["Content-Type"] = "text/plain";
-    message["Content-Length"] = to_string(folder_content.length());
+    
     message.writeResponseHead(buffer, size);
 
     folder_content.insert(0, buffer);
@@ -63,17 +74,18 @@ int lstResponse(int client_socket, char* buffer, int size, HTTP_message_t messag
     return 1;//read_size;
 }
 
-int mkdResponse (int client_socket, char* buffer, int size, HTTP_message_t message) {
-    
-    if (mkdir(("." + message["Remote-Path"]).c_str()) == 0)
-        message["Code"] = "200 OK";
-    else    
-        message["Code"] = "400 Bad Request";
+int mkdResponse (int client_socket, char* buffer, int size, HTTP_message_t message, string root_path) {
+    struct stat statbuf;
 
-        message["Content-Encoding"] = "identity"; 
-        message["Content-Type"] = "text/plain";
-        message["Content-Length"] = "0";
-        message.writeResponseHead(buffer, size);
+    cout<< root_path + message["Remote-Path"] << endl;
+
+    mkdir((root_path + message["Remote-Path"]).c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    message["Code"] = "200 OK";
+    
+    message["Content-Encoding"] = "identity"; 
+    message["Content-Type"] = "text/plain";
+    message["Content-Length"] = "0";
+    message.writeResponseHead(buffer, size);
     switch (send(client_socket, buffer, size, 0)) {
         case -1: break;
         case  0: break;
@@ -83,17 +95,51 @@ int mkdResponse (int client_socket, char* buffer, int size, HTTP_message_t messa
     return 1;//read_size;
 }
 
-int rmdResponse(int client_socket, char* buffer, int size, HTTP_message_t message) {
-    
-    if (rmdir(("." + message["Remote-Path"]).c_str()) == 0)
-        message["Code"] = "200 OK";
-    else    
-        message["Code"] = "400 Bad Request";
+int rmdResponse (int client_socket, char* buffer, int size, HTTP_message_t message, string root_path) {
+    struct stat statbuf;
 
-        message["Content-Encoding"] = "identity"; 
-        message["Content-Type"] = "text/plain";
-        message["Content-Length"] = "0";
-        message.writeResponseHead(buffer, size);
+    if (stat((root_path + message["Remote-Path"]).c_str(), &statbuf) != 0)
+        message["Code"] = "404 Not Found";   
+    
+    else if (!S_ISDIR(statbuf.st_mode))
+        message["Code"] = "400 Bad Request";
+    
+    else { 
+        rmdir((root_path + message["Remote-Path"]).c_str());
+        message["Code"] = "200 OK";
+    }
+
+    message["Content-Encoding"] = "identity"; 
+    message["Content-Type"] = "text/plain";
+    message["Content-Length"] = "0";
+    message.writeResponseHead(buffer, size);
+    switch (send(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }      
+    
+    return 1;//read_size;
+}
+
+int delResponse(int client_socket, char* buffer, int size, HTTP_message_t message, string root_path) {
+    struct stat statbuf;
+
+    if (stat((root_path + message["Remote-Path"]).c_str(), &statbuf) != 0)
+        message["Code"] = "404 Not Found";   
+    
+    else if (!S_ISREG(statbuf.st_mode))
+        message["Code"] = "400 Bad Request";
+    
+    else { 
+        remove((root_path + message["Remote-Path"]).c_str());
+        message["Code"] = "200 OK";
+    }
+
+    message["Content-Encoding"] = "identity"; 
+    message["Content-Type"] = "text/plain";
+    message["Content-Length"] = "0";
+    message.writeResponseHead(buffer, size);
     switch (send(client_socket, buffer, size, 0)) {
         case -1: break;
         case  0: break;

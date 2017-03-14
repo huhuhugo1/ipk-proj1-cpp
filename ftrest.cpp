@@ -13,7 +13,7 @@
 #include "common/socket.cpp"
 #include "common/commands.cpp"
 
-#define BUFSIZE 1024
+#define BUFSIZE 4096
 using namespace std;
 
 int main (int argc, const char * argv[]) {
@@ -23,15 +23,15 @@ int main (int argc, const char * argv[]) {
     if (box.command == "put")
         putRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "mkd")
-        mkd(&box, BUFSIZE, client_socket);
+        mkdRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "get")
         get(&box, BUFSIZE, client_socket);
     else if (box.command == "lst")
         lstRquest(&box, BUFSIZE, client_socket);
     else if (box.command == "del")
-        del(&box, BUFSIZE, client_socket);
+        delRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "rmd")
-        rmd(&box, BUFSIZE, client_socket);
+        rmdRequest(&box, BUFSIZE, client_socket);
     else
         exit(1);//todo error
     
