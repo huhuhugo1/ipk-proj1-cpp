@@ -24,7 +24,7 @@ public:
     void setDate() {
         static char date[100];
         time_t cas = time(NULL);
-        strftime(date, 100, "%a, %d %b %Y %X CET", localtime(&cas));
+        strftime(date, 100, "%a, %d %b %Y %X %Z", localtime(&cas));
         m["Date"] = string(date);
     }
 /*

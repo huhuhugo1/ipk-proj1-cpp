@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
             mkdResponse(client_sock, buffer, BUFSIZE, message, root_path);
             
         else if (message["Command"] == "GET" && message["Type"] == "file")
-            ;//getReaction(client_sock, buffer, BUFSIZE, message, root_path);
+            getResponse(client_sock, buffer, BUFSIZE, message, root_path);
         
         else if (message["Command"] == "GET" && message["Type"] == "folder")
             lstResponse(client_sock, buffer, BUFSIZE, message, root_path);

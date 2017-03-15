@@ -34,7 +34,7 @@ void putRequest (argumentBox* box, unsigned size, int client_socket) {
     fclose(file);
 }
 
-void lstRquest (argumentBox* box, unsigned size, int client_socket) {
+void lstRequest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
@@ -122,21 +122,6 @@ void rmdRequest (argumentBox* box, unsigned size, int client_socket) {
     cout << string(buffer, 12) << endl;
 }
 
-void get (argumentBox* box, unsigned size, int client_socket) {
-    //bool is_full;
-    char buffer[size];
-    struct HTTP_message_t message;
-
-    message["Command"] = "GET";
-    message["Remote-Path"] = box->remote_path;
-    message["Type"] = "file";
-    //message.fileInit(box->local_path.c_str(), "wb");
-
-    message.writeRequestHead(buffer, size);
-    if (send(client_socket, buffer, size, 0) < 0)
-            perror("ERROR in sendto");
-}
-
 void delRequest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
@@ -163,5 +148,57 @@ void delRequest (argumentBox* box, unsigned size, int client_socket) {
     cout << string(buffer, 12) << endl;
 }
 
+void getRequest (argumentBox* box, unsigned size, int client_socket) {
+    char buffer[size];
+    struct HTTP_message_t message;
 
+    message["Command"] = "GET";
+    message["Remote-Path"] = box->remote_path;
+    message["Type"] = "file";
+
+    message.writeRequestHead(buffer, size);
+    
+    switch (send(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    cout << "sended\n";
+    switch (recv(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    message.parseResponseHead(buffer, size);
+
+    cout << string(buffer, 12) << endl;
+
+    FILE* file = fopen(box->local_path.c_str(), "wb");
+    unsigned long long expected_size = stoull(message["Content-Length"]);
+    unsigned long long written = 0;
+    char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+
+    while (true) {
+        int write_length = size - (body_pos - buffer);  //velkost celeho tela spravy
+        if (write_length + written > expected_size)     //ak by to precilo velkost suboru
+            write_length = expected_size - written;     //tak tam zapis iba zvysok
+        
+        written += fwrite(body_pos, sizeof(char), write_length, file);
+        body_pos = buffer;
+        
+        if (written < expected_size) {
+            switch (recv(client_socket, buffer, size, 0)) {
+                case -1: break;
+                case  0: break;
+                default: break;
+            }
+        } else
+            break;
+        
+    }
+
+    fclose(file); 
+}
 

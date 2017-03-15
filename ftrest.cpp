@@ -25,9 +25,9 @@ int main (int argc, const char * argv[]) {
     else if (box.command == "mkd")
         mkdRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "get")
-        get(&box, BUFSIZE, client_socket);
+        getRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "lst")
-        lstRquest(&box, BUFSIZE, client_socket);
+        lstRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "del")
         delRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "rmd")

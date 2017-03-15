@@ -148,3 +148,58 @@ int delResponse(int client_socket, char* buffer, int size, HTTP_message_t messag
     
     return 1;//read_size;
 }
+
+int getResponse(int client_socket, char* buffer, int size, HTTP_message_t message, string root_path) {
+    unsigned long long expected_length;
+    unsigned long long read = 0;
+    FILE* file = NULL;
+    
+    struct stat statbuf;
+    if (stat((root_path + message["Remote-Path"]).c_str(), &statbuf) != 0) {
+        message["Code"] = "404 Not Found";
+        message["Content-Encoding"] = "identity"; 
+        message["Content-Type"] = "text/plain";
+        message["Content-Length"] = "0";
+        expected_length = 0;
+    }
+    else if (!S_ISREG(statbuf.st_mode)) {
+        message["Code"] = "400 Bad Request";
+        message["Content-Encoding"] = "identity"; 
+        message["Content-Type"] = "text/plain";
+        message["Content-Length"] = "0";
+        expected_length = 0;
+    }
+    else {  
+        file = fopen((root_path + message["Remote-Path"]).c_str(), "rb");
+        fseek(file, 0L, SEEK_END);
+        expected_length = ftell(file);
+        rewind(file);
+        
+        message["Code"] = "200 OK";
+        message["Content-Encoding"] = "identity"; 
+        message["Content-Type"] = "application/octet-stream";
+        message["Content-Length"] = to_string(expected_length);
+    }
+    
+    message.writeResponseHead(buffer, size);
+
+    char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+
+    while (read < expected_length) {
+        int read_length = size;                         //velkost celeho bufferu
+        if (body_pos - buffer + read_length > size)     //ak by to precilo velkost velkost celeho buferu
+            read_length = size - (body_pos - buffer);   //tak tam zapis iba zvysok
+
+        read += fread(body_pos, sizeof(char), read_length, file);
+        body_pos = buffer;
+
+        switch (send(client_socket, buffer, size, 0)) {
+            case -1: break;
+            case  0: break;
+            default: break;
+        }
+    };
+
+    fclose(file); 
+    return 0;//read_size;
+}
