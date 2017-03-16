@@ -12,15 +12,12 @@
 using namespace std;
 
 int main(int argc, char *argv[]) {
-    string root_path;
-    int port;
+    string root_path = ".";
+    int port = 6677;
 
     //Arguments process
     switch (argc) {
-        case 1:
-            port = 6677;
-            char buff[FILENAME_MAX];
-            root_path = string(getcwd(buff, FILENAME_MAX));            
+        case 1:            
             break;
         case 5:
             if (string(argv[3]) == "-r")
@@ -39,6 +36,9 @@ int main(int argc, char *argv[]) {
     }
         if (root_path.back() == '/')
             root_path.pop_back();
+
+    cout << port << endl;
+    cout << root_path << endl;
 
     int socket_desc, client_sock, c, read_size;
     struct sockaddr_in server, client;

@@ -1,4 +1,4 @@
-#include <regex>
+#include "regex.cpp"
 
 using namespace std;
 
@@ -20,7 +20,7 @@ struct argumentBox {
             this->command.assign(argv[1]);
 
             string url(argv[2]);
-            if (regex_match(url, regex("^http:\\/\\/[^:]+:[0-9]+\\/.*$"))) {
+            if (regex_match(url, "^http:\\/\\/[^:]+:[0-9]+\\/.*$")) {
                 url.assign(argv[2]+7);    
 
                 int semicolon_idx = url.find(':', 0);
