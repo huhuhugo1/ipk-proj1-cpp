@@ -222,18 +222,18 @@ void getResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
     
     struct stat statbuf;
     if (stat((root_path + message["Remote-Path"]).c_str(), &statbuf) != 0) {
+        error_msg = "File not found.\n";
         message["Code"] = "404 Not Found";
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";
         message["Content-Length"] = "0";
-        expected_length = 0;
     }
     else if (!S_ISREG(statbuf.st_mode)) {
+        error_msg = "Not a file.\n";
         message["Code"] = "400 Bad Request";
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";
         message["Content-Length"] = "0";
-        expected_length = 0;
     }
     else {  
         if (file = fopen((root_path + message["Remote-Path"]).c_str(), "rb")) {
@@ -261,7 +261,7 @@ void getResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
         sendError(buffer, size, client_socket, error_msg);
         return;
     }
-
+    
     char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
 
     while (read < expected_length) {

@@ -42,7 +42,7 @@ void putRequest (argumentBox* box, unsigned size, int client_socket) {
 
     message.parseResponseHead(buffer, size);
     
-    if (string(buffer, 3) != "200") {
+    if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
     }
@@ -108,7 +108,7 @@ void mkdRequest (argumentBox* box, unsigned size, int client_socket) {
 
     message.parseResponseHead(buffer, size);
     
-    if (string(buffer, 3) != "200") {
+    if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
     }
@@ -138,7 +138,7 @@ void rmdRequest (argumentBox* box, unsigned size, int client_socket) {
 
     message.parseResponseHead(buffer, size);
     
-    if (string(buffer, 3) != "200") {
+    if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
     }
@@ -168,7 +168,7 @@ void delRequest (argumentBox* box, unsigned size, int client_socket) {
 
     message.parseResponseHead(buffer, size);
     
-    if (string(buffer, 3) != "200") {
+    if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
     }
@@ -190,7 +190,6 @@ void getRequest (argumentBox* box, unsigned size, int client_socket) {
         default: break;
     }
 
-    cout << "sended\n";
     switch (recv(client_socket, buffer, size, 0)) {
         case -1: break;
         case  0: break;
@@ -198,10 +197,11 @@ void getRequest (argumentBox* box, unsigned size, int client_socket) {
     }
 
     message.parseResponseHead(buffer, size);
-
-    if (string(buffer, 3) != "200") {
+    
+    if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
+        return;
     }
 
     FILE* file = fopen(box->local_path.c_str(), "wb");

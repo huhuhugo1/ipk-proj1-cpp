@@ -106,7 +106,7 @@ public:
         stringstream atributes(head.substr(head.find("\r\n") + 2));
         string line;
 
-        m["Code"] = head.substr(9 + 1, head.find("\r\n"));
+        m["Code"] = head.substr(9, head.find("\r\n")-9);
         
         while (getline(atributes, line)) {
             string index = line.substr(0, line.find(":"));
