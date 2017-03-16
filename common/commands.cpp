@@ -30,8 +30,22 @@ void putRequest (argumentBox* box, unsigned size, int client_socket) {
             case  0: break;
             default: break;
         }
-    };
+    }
+
     fclose(file);
+    
+    switch (recv(client_socket, buffer, size, 0)) {
+        case -1: break;
+        case  0: break;
+        default: break;
+    }
+
+    message.parseResponseHead(buffer, size);
+    
+    if (string(buffer, 3) != "200") {
+        char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+        fprintf(stderr, "%.*s", size, body_pos);
+    }
 }
 
 void lstRequest (argumentBox* box, unsigned size, int client_socket) {
@@ -93,7 +107,11 @@ void mkdRequest (argumentBox* box, unsigned size, int client_socket) {
     }
 
     message.parseResponseHead(buffer, size);
-    cout << string(buffer, 12) << endl;
+    
+    if (string(buffer, 3) != "200") {
+        char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+        fprintf(stderr, "%.*s", size, body_pos);
+    }
 }
 
 void rmdRequest (argumentBox* box, unsigned size, int client_socket) {
@@ -119,7 +137,11 @@ void rmdRequest (argumentBox* box, unsigned size, int client_socket) {
     }
 
     message.parseResponseHead(buffer, size);
-    cout << string(buffer, 12) << endl;
+    
+    if (string(buffer, 3) != "200") {
+        char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+        fprintf(stderr, "%.*s", size, body_pos);
+    }
 }
 
 void delRequest (argumentBox* box, unsigned size, int client_socket) {
@@ -145,7 +167,11 @@ void delRequest (argumentBox* box, unsigned size, int client_socket) {
     }
 
     message.parseResponseHead(buffer, size);
-    cout << string(buffer, 12) << endl;
+    
+    if (string(buffer, 3) != "200") {
+        char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+        fprintf(stderr, "%.*s", size, body_pos);
+    }
 }
 
 void getRequest (argumentBox* box, unsigned size, int client_socket) {
@@ -173,7 +199,10 @@ void getRequest (argumentBox* box, unsigned size, int client_socket) {
 
     message.parseResponseHead(buffer, size);
 
-    cout << string(buffer, 12) << endl;
+    if (string(buffer, 3) != "200") {
+        char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+        fprintf(stderr, "%.*s", size, body_pos);
+    }
 
     FILE* file = fopen(box->local_path.c_str(), "wb");
     unsigned long long expected_size = stoull(message["Content-Length"]);
