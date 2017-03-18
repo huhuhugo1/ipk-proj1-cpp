@@ -29,6 +29,13 @@ void mkdResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
         message["Content-Type"] = "text/plain";
         message["Content-Length"] = to_string(error_msg.length());
     } 
+    else if (errno == ENOENT) {
+        error_msg = "Directory not found.\n";
+        message["Code"] = "400 Bad Request";
+        message["Content-Encoding"] = "identity"; 
+        message["Content-Type"] = "text/plain";
+        message["Content-Length"] = to_string(error_msg.length());
+    }
     else {
         error_msg = "Unknown error.\n";
         message["Code"] = "400 Bad Request";
@@ -286,12 +293,16 @@ void putResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
     string error_msg = "";
     FILE* file;
 
+    unsigned long long expected_size = stoull(message["Content-Length"]);
+    unsigned long long written = 0;
+
     if (access( (root_path + message["Remote-Path"]).c_str(), F_OK ) != -1) {
         error_msg = "Already exists.\n";
         message["Code"] = "400 Bad Request";
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";
         message["Content-Length"] = to_string(error_msg.length());
+        file = fopen("/dev/null", "wb");
     } 
     else if ((file = fopen((root_path + message["Remote-Path"]).c_str(), "wb")) == NULL) {
         error_msg = "Unknown error.\n";
@@ -299,16 +310,9 @@ void putResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";
         message["Content-Length"] = to_string(error_msg.length());
-    }
-
-    if (error_msg != "") {
-        message.writeResponseHead(buffer, size);
-        sendError(buffer, size, client_socket, error_msg);
-        return;
+        file = fopen("/dev/null", "wb");
     }
     
-    unsigned long long expected_size = stoull(message["Content-Length"]);
-    unsigned long long written = 0;
     char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
 
     while (true) {
@@ -330,6 +334,12 @@ void putResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
     }
 
     fclose(file); 
+
+    if (error_msg != "") {
+        message.writeResponseHead(buffer, size);
+        sendError(buffer, size, client_socket, error_msg);
+        return;
+    }
 
     message["Code"] = "200 OK";
     message["Content-Encoding"] = "identity"; 

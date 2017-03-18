@@ -1,5 +1,10 @@
-void putRequest (argumentBox* box, unsigned size, int client_socket) {
-    FILE* file = fopen(box->local_path.c_str(), "rb");
+int putRequest (argumentBox* box, unsigned size, int client_socket) {
+    FILE* file;
+    if ((file = fopen(box->local_path.c_str(), "rb")) == NULL) {
+        fprintf(stderr, "Unknown error.\n");
+        return 1;
+    }
+
     struct HTTP_message_t message;
     char buffer[size];
 
@@ -45,10 +50,12 @@ void putRequest (argumentBox* box, unsigned size, int client_socket) {
     if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
+        return 1;
     }
+    return 0;
 }
 
-void lstRequest (argumentBox* box, unsigned size, int client_socket) {
+int lstRequest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
@@ -71,6 +78,13 @@ void lstRequest (argumentBox* box, unsigned size, int client_socket) {
     }
 
     message.parseResponseHead(buffer, size);
+
+    if (message["Code"] != "200 OK") {
+        char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
+        fprintf(stderr, "%.*s", size, body_pos);
+        return 1;
+    }
+
     char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
     printf("%.*s", size, body_pos);
     
@@ -82,9 +96,10 @@ void lstRequest (argumentBox* box, unsigned size, int client_socket) {
         }
         printf("%.*s", size, buffer);
     } 
+    return 0;
 }
 
-void mkdRequest (argumentBox* box, unsigned size, int client_socket) {
+int mkdRequest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
@@ -111,10 +126,12 @@ void mkdRequest (argumentBox* box, unsigned size, int client_socket) {
     if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
+        return 1;
     }
+    return 0;
 }
 
-void rmdRequest (argumentBox* box, unsigned size, int client_socket) {
+int rmdRequest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
@@ -141,10 +158,12 @@ void rmdRequest (argumentBox* box, unsigned size, int client_socket) {
     if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
+        return 1;
     }
+    return 0;
 }
 
-void delRequest (argumentBox* box, unsigned size, int client_socket) {
+int delRequest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
@@ -171,10 +190,12 @@ void delRequest (argumentBox* box, unsigned size, int client_socket) {
     if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
+        return 1;
     }
+    return 0;
 }
 
-void getRequest (argumentBox* box, unsigned size, int client_socket) {
+int getRequest (argumentBox* box, unsigned size, int client_socket) {
     char buffer[size];
     struct HTTP_message_t message;
 
@@ -201,7 +222,7 @@ void getRequest (argumentBox* box, unsigned size, int client_socket) {
     if (message["Code"] != "200 OK") {
         char* body_pos = strstr(buffer, "\r\n\r\n") + 4;
         fprintf(stderr, "%.*s", size, body_pos);
-        return;
+        return 1;
     }
 
     FILE* file = fopen(box->local_path.c_str(), "wb");
@@ -229,5 +250,6 @@ void getRequest (argumentBox* box, unsigned size, int client_socket) {
     }
 
     fclose(file); 
+    return 0;
 }
 

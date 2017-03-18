@@ -20,21 +20,23 @@ int main (int argc, const char * argv[]) {
     argumentBox box(argc, argv);
     int client_socket = createClientSocket(box.host.c_str(), box.port);
     
+    int error_code = 0;
+
     if (box.command == "put")
-        putRequest(&box, BUFSIZE, client_socket);
+        error_code = putRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "mkd")
-        mkdRequest(&box, BUFSIZE, client_socket);
+        error_code = mkdRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "get")
-        getRequest(&box, BUFSIZE, client_socket);
+        error_code = getRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "lst")
-        lstRequest(&box, BUFSIZE, client_socket);
+        error_code = lstRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "del")
-        delRequest(&box, BUFSIZE, client_socket);
+        error_code = delRequest(&box, BUFSIZE, client_socket);
     else if (box.command == "rmd")
-        rmdRequest(&box, BUFSIZE, client_socket);
+        error_code = rmdRequest(&box, BUFSIZE, client_socket);
     else
         exit(1);//todo error
     
     close(client_socket);
-    return 0;
+    return error_code;
 }
