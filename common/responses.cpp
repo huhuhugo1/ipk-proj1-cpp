@@ -30,7 +30,10 @@ void mkdResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
         message["Content-Length"] = to_string(error_msg.length());
     } 
     else if (errno == ENOENT) {
-        error_msg = "Directory not found.\n";
+        if (stat((root_path + message["Remote-Path"].substr(0, message["Remote-Path"].find('/', 1))).c_str(), &statbuf) != 0)
+            error_msg = "User Account Not Found.\n";
+        else
+            error_msg = "Directory not found.\n";
         message["Code"] = "400 Bad Request";
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";
@@ -63,7 +66,10 @@ void rmdResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
     struct stat statbuf;
 
     if (stat((root_path + message["Remote-Path"]).c_str(), &statbuf) != 0) {
-        error_msg = "Directory not found.\n";
+        if (stat((root_path + message["Remote-Path"].substr(0, message["Remote-Path"].find('/', 1))).c_str(), &statbuf) != 0)
+            error_msg = "User Account Not Found.\n";
+        else
+            error_msg = "Directory not found.\n";
         message["Code"] = "404 Not Found";
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";
@@ -116,7 +122,10 @@ void lstResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
     struct stat statbuf;
 
     if (stat((root_path + message["Remote-Path"]).c_str(), &statbuf) != 0) {
-        error_msg = "Directory not found.\n";
+        if (stat((root_path + message["Remote-Path"].substr(0, message["Remote-Path"].find('/', 1))).c_str(), &statbuf) != 0)
+            error_msg = "User Account Not Found.\n";
+        else
+            error_msg = "Directory not found.\n";
         message["Code"] = "404 Not Found"; 
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";  
@@ -130,9 +139,11 @@ void lstResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
         message["Content-Length"] = to_string(error_msg.length());
     }
     else {
+        int i = 0;
         if (DIR *dpdf = opendir((root_path + message["Remote-Path"]).c_str())) {
             while (struct dirent *epdf = readdir(dpdf))
-                folder_content.append(epdf->d_name).append("\n");
+                if (i++ > 1)
+                    folder_content.append(epdf->d_name).append("\n");
             
             message["Code"] = "200 OK";
             message["Content-Encoding"] = "identity"; 
@@ -178,7 +189,10 @@ void delResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
     struct stat statbuf;
 
     if (stat((root_path + message["Remote-Path"]).c_str(), &statbuf) != 0) {
-        error_msg = "File not found.\n";
+        if (stat((root_path + message["Remote-Path"].substr(0, message["Remote-Path"].find('/', 1))).c_str(), &statbuf) != 0)
+            error_msg = "User Account Not Found.\n";
+        else
+            error_msg = "File not found.\n";
         message["Code"] = "404 Not Found"; 
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";  
@@ -229,7 +243,10 @@ void getResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
     
     struct stat statbuf;
     if (stat((root_path + message["Remote-Path"]).c_str(), &statbuf) != 0) {
-        error_msg = "File not found.\n";
+        if (stat((root_path + message["Remote-Path"].substr(0, message["Remote-Path"].find('/', 1))).c_str(), &statbuf) != 0)
+            error_msg = "User Account Not Found.\n";
+        else
+            error_msg = "File not found.\n";
         message["Code"] = "404 Not Found";
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";
@@ -291,6 +308,7 @@ void getResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
 
 void putResponse (int client_socket, char* buffer, int size, HTTP_message_t message, string root_path) {
     string error_msg = "";
+    struct stat statbuf;
     FILE* file;
 
     unsigned long long expected_size = stoull(message["Content-Length"]);
@@ -305,8 +323,14 @@ void putResponse (int client_socket, char* buffer, int size, HTTP_message_t mess
         file = fopen("/dev/null", "wb");
     } 
     else if ((file = fopen((root_path + message["Remote-Path"]).c_str(), "wb")) == NULL) {
-        error_msg = "Unknown error.\n";
-        message["Code"] = "400 Bad Request";
+        if (stat((root_path + message["Remote-Path"].substr(0, message["Remote-Path"].find('/', 1))).c_str(), &statbuf) != 0) {
+            error_msg = "User Account Not Found.\n";
+            message["Code"] = "404 Not Found";
+        }
+        else {
+            error_msg = "Unknown error.\n";
+            message["Code"] = "400 Bad Request";
+        }
         message["Content-Encoding"] = "identity"; 
         message["Content-Type"] = "text/plain";
         message["Content-Length"] = to_string(error_msg.length());

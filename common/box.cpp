@@ -39,5 +39,8 @@ struct argumentBox {
             }
         }
 
+        if (this->local_path == "")
+            this->local_path = this->remote_path.substr(this->remote_path.find_last_of('/') + 1);
+
     }
 };

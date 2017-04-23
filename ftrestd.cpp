@@ -37,9 +37,6 @@ int main(int argc, char *argv[]) {
         if (root_path.back() == '/')
             root_path.pop_back();
 
-    cout << port << endl;
-    cout << root_path << endl;
-
     int socket_desc, client_sock, c, read_size;
     struct sockaddr_in server, client;
     char buffer[BUFSIZE];
